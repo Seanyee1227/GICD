@@ -406,6 +406,7 @@ MonoBehaviour:
   attackCollider: {fileID: 1538228419}
   attackDamage: 10
   attacked: 0
+  AttackRange: {fileID: 1538228418}
 --- !u!212 &1636140398
 SpriteRenderer:
   m_ObjectHideFlags: 0
