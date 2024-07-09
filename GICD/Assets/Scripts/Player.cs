@@ -1,7 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -11,7 +9,7 @@ public class Player : MonoBehaviour
     private float _moveSpeed;
     [SerializeField]
     private float _jumpForce;
-    private bool _isJump = false;
+    private bool _isJump;
 
     [Header("PlayerAttack")]
     public GameObject attackRange;
@@ -21,18 +19,17 @@ public class Player : MonoBehaviour
     private float _attackDelay = 0.3f;
 
     Rigidbody2D _rb;
-    LayerMask _ground;
+    Collider2D _coll;
 
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
-       // attackRange = GetComponentInChildren<GameObject>();
+        _coll = GetComponent<Collider2D>();
     }
 
     private void Start()
     {
-
-        _ground = LayerMask.NameToLayer("Ground");
+        _isJump = false;
     }
 
     private void Update()
@@ -55,31 +52,16 @@ public class Player : MonoBehaviour
 
     private void Jump()
     {
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") && !_isJump)
         {
-            if (!_isJump)
-            {
-                _isJump = true;
-                _rb.AddForce(Vector2.up * _jumpForce, ForceMode2D.Impulse);
-            }
-        }
-    }
-
-    private IEnumerator Attack()
-    {
-        if (Input.GetKey(_attackKey))
-        {
-            _isAttacking = true;
-            attackRange.gameObject.SetActive(true);
-            yield return new WaitForSeconds(_attackDelay);
-            attackRange.gameObject.SetActive(false);
-            _isAttacking = false;
+            _isJump = true;
+            _rb.AddForce(Vector2.up * _jumpForce, ForceMode2D.Impulse);
         }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.layer == _ground)
+        if (collision.gameObject.tag == "Ground")
         {
             _isJump = false;
         }
