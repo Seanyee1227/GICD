@@ -10,25 +10,29 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float _jumpForce;
     private bool _isJump;
-    private Vector2 _lastMoveDir = Vector2.down; 
+    private Vector2 _lastMoveDir = Vector2.down;
 
     [Header("PlayerAttack")]
+    public int damage = 10;
     public GameObject attackRange;
     private KeyCode _attackKey = KeyCode.K;
     private bool _isAttacking = false;
     [SerializeField]
     private float _attackDelay = 0.3f;
     Transform _enemyPos;
+    private int _enemyLayer;
 
     Rigidbody2D _rb;
     Collider2D _coll;
     BoxCollider2D _AttackRange;
+
 
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
         _coll = GetComponent<Collider2D>();
         _AttackRange = attackRange.GetComponent<BoxCollider2D>();
+        _enemyLayer = LayerMask.NameToLayer("Enemy");
     }
 
     private void Start()
@@ -42,7 +46,7 @@ public class Player : MonoBehaviour
 
         if (Input.GetKey(_attackKey) && _isAttacking == false)
         {
-            StartCoroutine(Attack());
+            StartCoroutine(AttackCoroutine());
         }
     }
 
@@ -82,7 +86,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    private IEnumerator Attack()
+    private IEnumerator AttackCoroutine()
     {
         _isAttacking = true;
         AttackPos();
@@ -113,6 +117,18 @@ public class Player : MonoBehaviour
         {
             _AttackRange.offset = new Vector2(-1, 0);
             _AttackRange.size = new Vector2(1, 1);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == _enemyLayer)
+        {
+            Enemy _enemy = collision.GetComponent<Enemy>();
+            if (_enemy != null)
+            {
+                _enemy.TakeDamage(damage);
+            }
         }
     }
 }
