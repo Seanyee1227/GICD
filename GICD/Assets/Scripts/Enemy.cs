@@ -4,7 +4,7 @@ public class Enemy : MonoBehaviour
 {
     [Header("Health")]
     [SerializeField]
-    private float _Health = 50f;
+    private float _Health = 5f;
 
     Collider _collider;
 

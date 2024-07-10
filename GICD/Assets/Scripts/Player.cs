@@ -9,12 +9,12 @@ public class Player : MonoBehaviour
     [SerializeField]
     private float _jumpForce;
     private bool _isJump;
-    private Vector2 _lastMoveDir = Vector2.down;
 
     [Header("PlayerAttack")]
-    private int _damage = 10;
+    [SerializeField]
+    private int _damage = 1;
     private float _curTime;
-    private float _coolTime;
+    private float _coolTime = 0.5f;
     public Transform pos;
     public Vector2 boxSize;
 
@@ -22,7 +22,6 @@ public class Player : MonoBehaviour
     CapsuleCollider2D _coll;
     SpriteRenderer _sprite;
     Animator _anim;
-
 
     private void Awake()
     {
@@ -55,12 +54,12 @@ public class Player : MonoBehaviour
 
         _rb.velocity = new Vector2(_hAxis * _moveSpeed, _rb.velocity.y);
 
-       if (Input.GetButton("Horizontal"))
+        if (Input.GetButton("Horizontal"))
         {
             _sprite.flipX = Input.GetAxisRaw("Horizontal") == -1;
         }
 
-       if (Mathf.Abs(_rb.velocity.x) < 0.2f)
+        if (Mathf.Abs(_rb.velocity.x) < 0.2f)
         {
             _anim.SetBool("isRunning", false);
         }
@@ -68,22 +67,27 @@ public class Player : MonoBehaviour
         {
             _anim.SetBool("isRunning", true);
         }
-        
     }
 
-    private void  Attack()
+    private void Attack()
     {
         if (_curTime <= 0)
         {
             if (Input.GetKeyDown(KeyCode.K))
             {
-                Collider2D[] _coll2D = Physics2D.OverlapBoxAll(pos.position, boxSize, 0);
+                Vector2 _attackPos = pos.position;
+                if (_sprite.flipX == true)
+                {
+                    _attackPos.x -= boxSize.x; 
+                }
+
+                Collider2D[] _coll2D = Physics2D.OverlapBoxAll(_attackPos, boxSize, 0);
                 foreach (Collider2D collider in _coll2D)
                 {
-                    if (collider.tag == "Enemy")
+                    if (collider.CompareTag("Enemy"))
                     {
-                        collider.GetComponent<Enemy>().TakeDamage(10);
-                    }   
+                        collider.GetComponent<Enemy>().TakeDamage(_damage);
+                    }
                 }
                 _curTime = _coolTime;
             }
@@ -125,7 +129,7 @@ public class Player : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "Ground")
+        if (collision.gameObject.CompareTag("Ground"))
         {
             _isJump = false;
         }
@@ -135,6 +139,12 @@ public class Player : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireCube(pos.position, boxSize);
+        Vector2 _attackPos = pos.position;
+
+        if (_sprite != null && _sprite.flipX == true)
+        {
+            _attackPos.x -= boxSize.x; 
+        }
+        Gizmos.DrawWireCube(_attackPos, boxSize);   
     }
 }
