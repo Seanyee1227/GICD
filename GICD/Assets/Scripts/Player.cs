@@ -1,20 +1,25 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
     [Header("Move")]
-    [SerializeField]
-    private float _moveSpeed;
-    [SerializeField]
-    private float _jumpForce;
-    private bool _isJump;
+    public float moveSpeed;
+    public float currentSpeed;
+    public float jumpForce;
+    private bool _isJumping;
+    private bool _isdashing = false;
+    private bool canDash = true;
+    public float dashForce = 24f;
+    private float dashTime = 0.2f;
+    private float dashCoolTime = 1f;
 
     [Header("PlayerAttack")]
     [SerializeField]
     private int _damage = 1;
     private float _curTime;
-    private float _coolTime = 0.5f;
+    private float _coolTime = 0.3f;
     public Transform pos;
     public Vector2 boxSize;
 
@@ -22,6 +27,8 @@ public class Player : MonoBehaviour
     CapsuleCollider2D _coll;
     SpriteRenderer _sprite;
     Animator _anim;
+    [SerializeField]
+    TrailRenderer _tr;
 
     private void Awake()
     {
@@ -33,26 +40,45 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
-        _isJump = false;
+        currentSpeed = moveSpeed;
+        _isJumping = false;
     }
 
     private void Update()
     {
+        if (_isdashing)
+        {
+            return;
+        }
+
         Jump();
         Attack();
         LandRayCast();
+
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
+        {
+            StartCoroutine(Dash());
+        }
     }
 
     private void FixedUpdate()
     {
+        if (_isdashing)
+        {
+            return;
+        }
+
         Move();
     }
 
     private void Move()
     {
-        float _hAxis = Input.GetAxisRaw("Horizontal");
+        float hAxis = Input.GetAxisRaw("Horizontal");
 
-        _rb.velocity = new Vector2(_hAxis * _moveSpeed, _rb.velocity.y);
+        if (!_isdashing)
+        {
+            _rb.velocity = new Vector2(hAxis * currentSpeed, _rb.velocity.y);
+        }
 
         if (Input.GetButton("Horizontal"))
         {
@@ -75,14 +101,14 @@ public class Player : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.K))
             {
-                Vector2 _attackPos = pos.position;
-                if (_sprite.flipX == true)
+                Vector2 attackPos = pos.position;
+                if (_sprite.flipX)
                 {
-                    _attackPos.x -= boxSize.x; 
+                    attackPos.x -= boxSize.x;
                 }
 
-                Collider2D[] _coll2D = Physics2D.OverlapBoxAll(_attackPos, boxSize, 0);
-                foreach (Collider2D collider in _coll2D)
+                Collider2D[] colliders = Physics2D.OverlapBoxAll(attackPos, boxSize, 0);
+                foreach (Collider2D collider in colliders)
                 {
                     if (collider.CompareTag("Enemy"))
                     {
@@ -100,10 +126,10 @@ public class Player : MonoBehaviour
 
     private void Jump()
     {
-        if (Input.GetButtonDown("Jump") && !_isJump)
+        if (Input.GetButtonDown("Jump") && !_isJumping)
         {
-            _isJump = true;
-            _rb.AddForce(Vector2.up * _jumpForce, ForceMode2D.Impulse);
+            _isJumping = true;
+            _rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             _anim.SetBool("isJumping", true);
             _anim.SetBool("isRunning", false);
         }
@@ -113,13 +139,12 @@ public class Player : MonoBehaviour
     {
         if (_rb.velocity.y < 0)
         {
-            // Ray 그리기
             Debug.DrawRay(_rb.position, Vector3.down, new Color(0, 1, 0));
 
-            RaycastHit2D _rayHit = Physics2D.Raycast(_rb.position, Vector3.down, 1, LayerMask.GetMask("Ground"));
-            if (_rayHit.collider != null)
+            RaycastHit2D rayHit = Physics2D.Raycast(_rb.position, Vector3.down, 1, LayerMask.GetMask("Ground"));
+            if (rayHit.collider != null)
             {
-                if (_rayHit.distance < 0.8f)
+                if (rayHit.distance < 0.8f)
                 {
                     _anim.SetBool("isJumping", false);
                 }
@@ -131,20 +156,43 @@ public class Player : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
-            _isJump = false;
+            _isJumping = false;
         }
     }
 
-    // 공격 범위
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.blue;
-        Vector2 _attackPos = pos.position;
+        Vector2 attackPos = pos.position;
 
-        if (_sprite != null && _sprite.flipX == true)
+        if (_sprite != null && _sprite.flipX)
         {
-            _attackPos.x -= boxSize.x; 
+            attackPos.x -= boxSize.x;
         }
-        Gizmos.DrawWireCube(_attackPos, boxSize);   
+        Gizmos.DrawWireCube(attackPos, boxSize);
+    }
+
+    private IEnumerator Dash()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
+        {
+            canDash = false;
+            _isdashing = true;
+            float originalGravity = _rb.gravityScale;
+            _rb.gravityScale = 0f;
+
+            float dashDirection = _sprite.flipX ? -1 : 1;
+            _rb.velocity = new Vector2(dashDirection * dashForce, 0f);
+            _tr.emitting = true;
+
+            yield return new WaitForSeconds(dashTime);
+
+            _rb.gravityScale = originalGravity;
+            _tr.emitting = false;
+            _isdashing = false;
+
+            yield return new WaitForSeconds(dashCoolTime);
+            canDash = true;
+        }
     }
 }
