@@ -46,11 +46,7 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
-        if (_isdashing)
-        {
-            return;
-        }
-
+       
         Jump();
         Attack();
         LandRayCast();
@@ -59,6 +55,13 @@ public class Player : MonoBehaviour
         {
             StartCoroutine(Dash());
         }
+
+        if (_curTime > 0)
+        {
+            _anim.SetBool("isAttacking", false);
+        }
+
+        
     }
 
     private void FixedUpdate()
@@ -116,6 +119,10 @@ public class Player : MonoBehaviour
                     }
                 }
                 _curTime = _coolTime;
+
+                _anim.SetBool("isAttacking", true);
+                _anim.SetBool("isRunning", false);
+                _anim.SetBool("isJumping", false);
             }
         }
         else
