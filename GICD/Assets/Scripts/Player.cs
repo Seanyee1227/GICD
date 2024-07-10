@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -13,14 +11,11 @@ public class Player : MonoBehaviour
     private Vector2 _lastMoveDir = Vector2.down;
 
     [Header("PlayerAttack")]
-    public int damage = 10;
-    public GameObject attackRange;
-    private KeyCode _attackKey = KeyCode.K;
-    private bool _isAttacking = false;
-    [SerializeField]
-    private float _attackDelay = 0.3f;
-    Transform _enemyPos;
-    private int _enemyLayer;
+    private int _damage = 10;
+    private float _curTime;
+    private float _coolTime;
+    public Transform pos;
+    public Vector2 boxSize;
 
     Rigidbody2D _rb;
     Collider2D _coll;
@@ -31,8 +26,6 @@ public class Player : MonoBehaviour
     {
         _rb = GetComponent<Rigidbody2D>();
         _coll = GetComponent<Collider2D>();
-        _AttackRange = attackRange.GetComponent<BoxCollider2D>();
-        _enemyLayer = LayerMask.NameToLayer("Enemy");
     }
 
     private void Start()
@@ -43,11 +36,7 @@ public class Player : MonoBehaviour
     private void Update()
     {
         Jump();
-
-        if (Input.GetKey(_attackKey) && _isAttacking == false)
-        {
-            StartCoroutine(AttackCoroutine());
-        }
+        Attack();
     }
 
     private void FixedUpdate()
@@ -69,6 +58,29 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void  Attack()
+    {
+        if (_curTime <= 0)
+        {
+            if (Input.GetKeyDown(KeyCode.K))
+            {
+                Collider2D[] _coll2D = Physics2D.OverlapBoxAll(pos.position, boxSize, 0);
+                foreach (Collider2D collider in _coll2D)
+                {
+                    if (collider.tag == "Enemy")
+                    {
+                        collider.GetComponent<Enemy>().TakeDamage(10);
+                    }   
+                }
+                _curTime = _coolTime;
+            }
+        }
+        else
+        {
+            _curTime -= Time.deltaTime;
+        }
+    }
+
     private void Jump()
     {
         if (Input.GetButtonDown("Jump") && !_isJump)
@@ -86,49 +98,9 @@ public class Player : MonoBehaviour
         }
     }
 
-    private IEnumerator AttackCoroutine()
+    private void OnDrawGizmos()
     {
-        _isAttacking = true;
-        AttackPos();
-        attackRange.SetActive(true);
-        yield return new WaitForSeconds(_attackDelay);
-        attackRange.SetActive(false);
-        _isAttacking = false;
-    }
-
-    private void AttackPos()
-    {
-        if (_lastMoveDir == Vector2.up)
-        {
-            _AttackRange.offset = new Vector2(0, 1);
-            _AttackRange.size = new Vector2(1, 1);
-        }
-        else if (_lastMoveDir == Vector2.down)
-        {
-            _AttackRange.offset = new Vector2(0, -1);
-            _AttackRange.size = new Vector2(1, 1);
-        }
-        else if (_lastMoveDir == Vector2.right)
-        {
-            _AttackRange.offset = new Vector2(1, 0);
-            _AttackRange.size = new Vector2(1, 1);
-        }
-        else if (_lastMoveDir == Vector2.left)
-        {
-            _AttackRange.offset = new Vector2(-1, 0);
-            _AttackRange.size = new Vector2(1, 1);
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.gameObject.layer == _enemyLayer)
-        {
-            Enemy _enemy = collision.GetComponent<Enemy>();
-            if (_enemy != null)
-            {
-                _enemy.TakeDamage(damage);
-            }
-        }
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(pos.position, boxSize);
     }
 }

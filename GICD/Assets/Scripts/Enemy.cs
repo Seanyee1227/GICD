@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    private float _maxHealth = 50f;
+    [Header("Health")]
     [SerializeField]
-    private float _currentHealth;
+    private float _Health = 50f;
 
     Collider _collider;
 
@@ -12,14 +12,13 @@ public class Enemy : MonoBehaviour
 
     private void Start()
     {
-        _currentHealth = _maxHealth;
         _collider = GetComponent<Collider>();
     }
 
     public void TakeDamage(int  _damage)
     {
-        _currentHealth -= _damage;
-        if (_currentHealth <= 0 )
+        _Health -= _damage;
+        if (_Health <= 0 )
         { 
             Destroy(gameObject);
         }
