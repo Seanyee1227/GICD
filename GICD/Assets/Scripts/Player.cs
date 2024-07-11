@@ -1,9 +1,12 @@
+using JetBrains.Annotations;
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    public static Player instance;
+
     [Header("Move")]
     public float moveSpeed;
     public float currentSpeed;
@@ -22,23 +25,23 @@ public class Player : MonoBehaviour
     private float _coolTime = 0.3f;
     public Transform pos;
     public Vector2 boxSize;
-    private int _hashAttackCount = Animator.StringToHash("AttackCount");
+    public bool isAttacking = false;
 
     Rigidbody2D _rb;
     CapsuleCollider2D _coll;
     SpriteRenderer _sprite;
-    Animator _anim;
+    public Animator anim;
     [SerializeField]
     TrailRenderer _tr;
 
     private void Awake()
     {
-        TryGetComponent(out _anim);
+        instance = this;
 
         _rb = GetComponent<Rigidbody2D>();
         _coll = GetComponent<CapsuleCollider2D>();
         _sprite = GetComponent<SpriteRenderer>();
-        _anim = GetComponent<Animator>();
+        anim = GetComponent<Animator>();
     }
 
     private void Start()
@@ -60,7 +63,7 @@ public class Player : MonoBehaviour
 
         if (_curTime > 0)
         {
-            _anim.SetBool("isAttacking", false);
+            anim.SetBool("isAttacking", false);
         }
     }
 
@@ -90,11 +93,11 @@ public class Player : MonoBehaviour
 
         if (Mathf.Abs(_rb.velocity.x) < 0.2f)
         {
-            _anim.SetBool("isRunning", false);
+            anim.SetBool("isRunning", false);
         }
         else
         {
-            _anim.SetBool("isRunning", true);
+            anim.SetBool("isRunning", true);
         }
     }
 
@@ -102,8 +105,10 @@ public class Player : MonoBehaviour
     {
         if (_curTime <= 0)
         {
-            if (Input.GetKeyDown(KeyCode.K))
-            {
+            if (Input.GetKeyDown(KeyCode.K) && isAttacking == false)
+            { 
+                isAttacking = true;
+
                 Vector2 attackPos = pos.position;
                 if (_sprite.flipX)
                 {
@@ -119,9 +124,6 @@ public class Player : MonoBehaviour
                     }
                 }
                 _curTime = _coolTime;
-
-                _anim.SetBool("isAttacking", true);
-                currentSpeed = 3f;
             }
         }
         else
@@ -140,14 +142,14 @@ public class Player : MonoBehaviour
 
             if (_isdashing == true)
             {
-                _anim.SetBool("isDashing", true);
-                _anim.SetBool("isJumping", false);
+                anim.SetBool("isJumping", false);
+                anim.SetBool("isDashing", true);
             }
             else
             {
-                _anim.SetBool("isJumping", true);
-                _anim.SetBool("isRunning", false);
-                _anim.SetBool("isDashing", false) ;
+                anim.SetBool("isJumping", true);
+                anim.SetBool("isRunning", false);
+                anim.SetBool("isDashing", false) ;
             }
         }
     }
@@ -163,7 +165,7 @@ public class Player : MonoBehaviour
             {
                 if (rayHit.distance < 0.8f)
                 {
-                    _anim.SetBool("isJumping", false);
+                    anim.SetBool("isJumping", false);
                 }
             }
         }
@@ -171,7 +173,7 @@ public class Player : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("Enemy"))
         {
             _isJumping = false;
         }
@@ -195,7 +197,7 @@ public class Player : MonoBehaviour
         {
             canDash = false;
             _isdashing = true;
-            _anim.SetBool("isDashing", true); 
+            anim.SetBool("isDashing", true); 
             float originalGravity = _rb.gravityScale;
             _rb.gravityScale = 0f;
 
@@ -208,7 +210,7 @@ public class Player : MonoBehaviour
             _rb.gravityScale = originalGravity;
             _tr.emitting = false;
             _isdashing = false;
-            _anim.SetBool("isDashing", false);  
+            anim.SetBool("isDashing", false);  
 
             yield return new WaitForSeconds(dashCoolTime);
             canDash = true;
