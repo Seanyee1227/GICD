@@ -22,7 +22,7 @@ public class Player : MonoBehaviour
     [SerializeField]
     private int _damage = 1;
     private float _curTime;
-    private float _coolTime = 0.3f;
+    private float _coolTime = 0.5f;
     public Transform pos;
     public Vector2 boxSize;
     public bool isAttacking = false;
