@@ -22,6 +22,7 @@ public class Player : MonoBehaviour
     private float _coolTime = 0.3f;
     public Transform pos;
     public Vector2 boxSize;
+    private int _hashAttackCount = Animator.StringToHash("AttackCount");
 
     Rigidbody2D _rb;
     CapsuleCollider2D _coll;
@@ -32,6 +33,8 @@ public class Player : MonoBehaviour
 
     private void Awake()
     {
+        TryGetComponent(out _anim);
+
         _rb = GetComponent<Rigidbody2D>();
         _coll = GetComponent<CapsuleCollider2D>();
         _sprite = GetComponent<SpriteRenderer>();
@@ -46,7 +49,6 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
-       
         Jump();
         Attack();
         LandRayCast();
@@ -60,8 +62,6 @@ public class Player : MonoBehaviour
         {
             _anim.SetBool("isAttacking", false);
         }
-
-        
     }
 
     private void FixedUpdate()
@@ -121,13 +121,13 @@ public class Player : MonoBehaviour
                 _curTime = _coolTime;
 
                 _anim.SetBool("isAttacking", true);
-                _anim.SetBool("isRunning", false);
-                _anim.SetBool("isJumping", false);
+                currentSpeed = 3f;
             }
         }
         else
         {
             _curTime -= Time.deltaTime;
+            currentSpeed = moveSpeed;
         }
     }
 
@@ -137,8 +137,18 @@ public class Player : MonoBehaviour
         {
             _isJumping = true;
             _rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            _anim.SetBool("isJumping", true);
-            _anim.SetBool("isRunning", false);
+
+            if (_isdashing == true)
+            {
+                _anim.SetBool("isDashing", true);
+                _anim.SetBool("isJumping", false);
+            }
+            else
+            {
+                _anim.SetBool("isJumping", true);
+                _anim.SetBool("isRunning", false);
+                _anim.SetBool("isDashing", false) ;
+            }
         }
     }
 
@@ -185,6 +195,7 @@ public class Player : MonoBehaviour
         {
             canDash = false;
             _isdashing = true;
+            _anim.SetBool("isDashing", true); 
             float originalGravity = _rb.gravityScale;
             _rb.gravityScale = 0f;
 
@@ -197,6 +208,7 @@ public class Player : MonoBehaviour
             _rb.gravityScale = originalGravity;
             _tr.emitting = false;
             _isdashing = false;
+            _anim.SetBool("isDashing", false);  
 
             yield return new WaitForSeconds(dashCoolTime);
             canDash = true;
