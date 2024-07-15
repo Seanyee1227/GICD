@@ -1,11 +1,17 @@
 using JetBrains.Annotations;
 using System.Collections;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
     public static Player instance;
+
+    [Header("HP")]
+    public int curHealth;
+    public int maxHealth = 4;
+
 
     [Header("Move")]
     public float moveSpeed;
@@ -21,8 +27,10 @@ public class Player : MonoBehaviour
     [Header("PlayerAttack")]
     [SerializeField]
     private int _damage = 1;
+    [SerializeField]
     private float _curTime;
-    private float _coolTime = 0.5f;
+    [SerializeField]
+    private float _coolTime = 0.3f;
     public Transform pos;
     public Vector2 boxSize;
     public bool isAttacking = false;
@@ -46,6 +54,7 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
+        curHealth = maxHealth;
         currentSpeed = moveSpeed;
         _isJumping = false;
     }
@@ -59,11 +68,6 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
         {
             StartCoroutine(Dash());
-        }
-
-        if (_curTime > 0)
-        {
-            anim.SetBool("isAttacking", false);
         }
     }
 
@@ -177,6 +181,11 @@ public class Player : MonoBehaviour
         {
             _isJumping = false;
         }
+
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            PlayerDamaged(_damage);
+        }
     }
 
     private void OnDrawGizmos()
@@ -214,6 +223,15 @@ public class Player : MonoBehaviour
 
             yield return new WaitForSeconds(dashCoolTime);
             canDash = true;
+        }
+    }
+
+    public void PlayerDamaged(int _damage)
+    {
+        curHealth -= _damage;
+        if (curHealth <= 0)
+        {
+            Destroy(gameObject);
         }
     }
 }
